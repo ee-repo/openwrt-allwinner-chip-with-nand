@@ -253,6 +253,19 @@ define U-Boot/Sinovoip_BPI_M2_Ultra
   BUILD_DEVICES:=sun8i-r40-bananapi-m2-ultra
 endef
 
+define U-Boot/LicheePi_Zero
+  BUILD_SUBTARGET:=cortexa7
+  NAME:=LicheePi Zero
+  BUILD_DEVICES:=sun8i-v3s-licheepi-zero
+endef
+
+define U-Boot/DolphinPi
+  BUILD_SUBTARGET:=cortexa7
+  NAME:=DolphinPi
+  BUILD_DEVICES:=sun8i-v3s-dolphinpi
+endef
+
+
 UBOOT_TARGETS := \
 	A10-OLinuXino-Lime \
 	A13-OLinuXino \
@@ -289,7 +302,9 @@ UBOOT_TARGETS := \
 	Sinovoip_BPI_M2_Plus \
 	Sinovoip_BPI_M2_Ultra \
 	sopine_baseboard \
-	orangepi_zero_plus
+	orangepi_zero_plus \
+  LicheePi_Zero \
+  DolphinPi
 
 UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
 

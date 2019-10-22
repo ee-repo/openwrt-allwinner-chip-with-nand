@@ -249,4 +249,24 @@ endef
 
 TARGET_DEVICES += sun8i-r40-bananapi-m2-ultra
 
+define Device/sun8i-v3s-licheepi-zero
+  DEVICE_VENDOR := LicheePi
+  DEVICE_MODEL := Zero
+  DEVICE_PACKAGES:=kmod-rtc-sunxi
+  SUPPORTED_DEVICES:=licheepi,licheepi-zero
+  SUNXI_DTS:=sun8i-v3s-licheepi-zero
+endef
+
+TARGET_DEVICES += sun8i-v3s-licheepi-zero
+
+define Device/sun8i-v3s-dolphinpi
+  DEVICE_VENDOR := Petit-Miner
+  DEVICE_MODEL := Dolphin Pi
+  DEVICE_PACKAGES:=kmod-rtc-sunxi
+  SUPPORTED_DEVICES:=dolphinpi
+  SUNXI_DTS:=sun8i-v3s-dolphinpi
+endef
+
+TARGET_DEVICES += sun8i-v3s-dolphinpi
+
 endif
