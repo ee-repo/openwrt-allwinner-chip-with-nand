@@ -50,10 +50,29 @@
 
 	aliases {
 		serial2 = &uart2;
+		spi0 = &spi0;
 	};
 
 	chosen {
 		stdout-path = "serial2:115200n8";
+	};
+
+	soc {
+		spi0: spi@01c68000 {
+			compatible = "allwinner,sun8i-h3-spi";
+			reg = <0x01c68000 0x1000>;
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			flash: m25p80@0 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "jedec,spi-nor";
+				reg = <0>;
+				spi-max-frequency = <100000000>;
+				m25p,chunked-io = <31>;
+			};
+		};	
 	};
 };
 
@@ -88,6 +107,13 @@
 	 	pins = "PB0", "PB1";
 		function = "uart2";
 		bias-pull-up;
+	};
+
+	spi0_pins: spi0-pins {
+		pins = "PC0", "PC1", "PC2", "PC3";
+		function = "spi0";
+		drive-strength = <10>;
+		bias-disable;
 	};
 	
 };

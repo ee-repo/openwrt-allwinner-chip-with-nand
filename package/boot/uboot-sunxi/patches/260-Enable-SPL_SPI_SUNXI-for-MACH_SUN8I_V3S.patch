@@ -1,0 +1,25 @@
+From 10650c0bafa1044295711e84e3e666ac4f6c34fe Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Benedikt-Alexander=20Mokro=C3=9F?= <bam@icognize.de>
+Date: Thu, 24 Oct 2019 09:18:00 +0200
+Subject: [PATCH] Enable SPL_SPI_SUNXI for MACH_SUN8I_V3S
+
+---
+ arch/arm/mach-sunxi/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-sunxi/Kconfig b/arch/arm/mach-sunxi/Kconfig
+index 3c54f51..65e9c56 100644
+--- a/arch/arm/mach-sunxi/Kconfig
++++ b/arch/arm/mach-sunxi/Kconfig
+@@ -973,7 +973,7 @@ config SPL_STACK_R_ADDR
+ 
+ config SPL_SPI_SUNXI
+ 	bool "Support for SPI Flash on Allwinner SoCs in SPL"
+-	depends on MACH_SUN4I || MACH_SUN5I || MACH_SUN7I || MACH_SUNXI_H3_H5 || MACH_SUN50I
++	depends on MACH_SUN4I || MACH_SUN5I || MACH_SUN7I || MACH_SUNXI_H3_H5 || MACH_SUN50I || MACH_SUN8I_V3S
+ 	help
+ 	  Enable support for SPI Flash. This option allows SPL to read from
+ 	  sunxi SPI Flash. It uses the same method as the boot ROM, so does
+-- 
+2.20.1
+

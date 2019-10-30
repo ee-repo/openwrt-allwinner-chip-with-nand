@@ -9,6 +9,7 @@
 	aliases {
 		serial0 = &uart2;
 		/* ethernet0 = &emac; */
+		spi0 = &spi0;
 		
 	};
 
@@ -58,7 +59,7 @@
 			phy-handle = <&int_mii_phy>;
 			phy-mode = "mii";
 			status = "okay";
-			allwinner,leds-active-high;
+			allwinner,leds-active-low;
 			
 			mdio: mdio {
 				#address-cells = <1>;
@@ -101,7 +102,7 @@
 };
 
 &usb_otg {
-	dr_mode = "otg";
+	dr_mode = "otg"; /* host, periphal, otg */
 	status = "okay";
 };
 
@@ -130,9 +131,36 @@
 };
 
 &spi0 {
-	pinctrl-0 = <&spi0_pins>;
-	pinctrl-names = "default";
-	status = "okay";
+    pinctrl-names = "default";
+    pinctrl-0 = <&spi0_pins>;
+    status = "okay";
+
+	flash: m25p80@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "w25q256", "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <100000000>;
+
+        partition@0 {
+			label = "u-boot";
+			reg = <0x0 0x30000>;
+		};
+
+		partition@30000 {
+			label = "u-boot-env";
+			reg = <0x30000 0x10000>;
+		};
+/*
+		factory: partition@40000 {
+			label = "factory";
+			reg = <0x40000 0x10000>;
+		};
+*/
+		firmware: partition@40000 {
+			label = "firmware";
+		};
+	};
 };
 
 /*
