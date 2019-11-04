@@ -64,13 +64,12 @@
 			status = "okay";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			flash: m25p80@0 {
+			flash: flash@0 {
 				#address-cells = <1>;
 				#size-cells = <1>;
-				compatible = "jedec,spi-nor";
-				reg = <0>;
-				spi-max-frequency = <100000000>;
-				m25p,chunked-io = <31>;
+				Compatible = "spi-nand";
+				Reg = <0>;
+				Spi-max-frequency = <50000000>;
 			};
 		};	
 	};
