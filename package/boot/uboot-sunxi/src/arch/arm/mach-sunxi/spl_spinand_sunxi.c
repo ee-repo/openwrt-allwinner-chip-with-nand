@@ -3,6 +3,8 @@
  * Copyright (C) 2019 Benedikt-Alexander Mokroß <bam@icognize.de>
  */
 
+#define DEBUG
+
 #include <common.h>
 #include <spl.h>
 #include <asm/gpio.h>
@@ -58,6 +60,7 @@
 #define SUN6I_SPI0_GCR              (0x01C68000 + 0x04)
 #define SUN6I_SPI0_TCR              (0x01C68000 + 0x08)
 #define SUN6I_SPI0_FIFO_STA         (0x01C68000 + 0x1C)
+#define SUN6I_SPI0_WCR				(0x01C68000 + 0x20)
 #define SUN6I_SPI0_MBC              (0x01C68000 + 0x30)
 #define SUN6I_SPI0_MTC              (0x01C68000 + 0x34)
 #define SUN6I_SPI0_BCC              (0x01C68000 + 0x38)
@@ -81,6 +84,7 @@
 #define SPI0_CLK_DIV_BY_2           0x1000
 #define SPI0_CLK_DIV_BY_4           0x1001
 
+#define DUMMY_BURST_BYTE 			0x00
 /*****************************************************************************/
 
 /*
@@ -161,17 +165,17 @@ static void spi0_disable_clock(void)
 static void spi0_init(void)
 {
 	unsigned int pin_function = SUNXI_GPC_SPI0;
-	printf("SPL SPI SUNXI: SPI0 Init\n");
 	if (IS_ENABLED(CONFIG_MACH_SUN50I))
 		pin_function = SUN50I_GPC_SPI0;
 
 	spi0_pinmux_setup(pin_function);
 	spi0_enable_clock();
+
+	writel(0x01, SUN6I_SPI0_WCR);
 }
 
 static void spi0_deinit(void)
 {
-	printf("SPL SPI SUNXI: SPI0 Deinit\n");
 	/* New SoCs can disable pins, older could only set them as input */
 	unsigned int pin_function = SUNXI_GPIO_INPUT;
 	if (IS_ENABLED(CONFIG_SUNXI_GEN_SUN6I))
@@ -195,14 +199,16 @@ static void sunxi_spi0_load_page(u32 addr, ulong spi_ctl_reg,
 				 ulong spi_bcc_reg) {
 
     /* Read Page in Cache */
-	u8 status;
-	printf("SPL SPI SUNXI: Load Page 0x%x\n", addr);
+	u8 status = 0x01;
+	addr = addr >> 11;
+
+	//printf("sunxi SPI-NAND: Load Page 0x%x\n", addr);
 	writel(4, spi_bc_reg); /* Burst counter (total bytes) */
 	writel(4, spi_tc_reg);           /* Transfer counter (bytes to send) */
 	if (spi_bcc_reg)
 		writel(4, spi_bcc_reg);  /* SUN6I also needs this */
 
-	/* Send the Read Data Bytes (03h) command header */
+	/* Send the Read Data Bytes (13h) command header */
 	writeb(0x13, spi_tx_reg);
 	writeb((u8)(addr >> 16), spi_tx_reg);
 	writeb((u8)(addr >> 8), spi_tx_reg);
@@ -215,108 +221,42 @@ static void sunxi_spi0_load_page(u32 addr, ulong spi_ctl_reg,
 	while((readl(spi_fifo_reg) & 0x7F0000) > 0)
 		;
 
+    /* wait till all bytes are read */
+	while ((readl(spi_fifo_reg) & 0x7F) < 4)
+		;
+
+	/* Discard the 4 empty bytes from our send */
+	readl(spi_rx_reg);
+
 	/* tCS = 100ns + tRD_ECC 70ns -> 200ns wait */
-	udelay(2);
+	ndelay(200);
 
 	do {
 		/* Poll */
-		writel(2 + 2, spi_bc_reg);       /* Burst counter (total bytes) */
+		writel(2 + 1, spi_bc_reg);   /* Burst counter (total bytes) */
 		writel(2, spi_tc_reg);       /* Transfer counter (bytes to send) */
 		if (spi_bcc_reg)
 			writel(2, spi_bcc_reg);  /* SUN6I also needs this */
 		/* Send the Read Status Bytes (0FC0h) command header */
 		writeb(0x0F, spi_tx_reg);
 		writeb(0xC0, spi_tx_reg);
-		while ((readl(spi_fifo_reg) & 0x7F) < 2 + 2)
+
+		/* Start the data transfer */
+		setbits_le32(spi_ctl_reg, spi_ctl_xch_bitmask);
+
+		while ((readl(spi_fifo_reg) & 0x7F) < 2 + 1)
 			;
 
 		/* skip 2 */
-		printf("Skip %x\n",readb(spi_rx_reg));
-		printf("Skip %x\n",readb(spi_rx_reg));
+		// printf("Skip %x\n",readb(spi_rx_reg));
+		// printf("Skip %x\n",readb(spi_rx_reg));
+	    readb(spi_rx_reg);
+		readb(spi_rx_reg);
 
 		status = readb(spi_rx_reg);
-		printf("Status: %x\n", status);
-	} while (status & 0x01 == 0x00);
+		ndelay(200);
+	} while ((status & 0x01) == 0x01);
 
-}
-
-static void sunxi_spi0_read_data(u8 *buf, u32 addr, u32 bufsize,
-				 ulong spi_ctl_reg,
-				 ulong spi_ctl_xch_bitmask,
-				 ulong spi_fifo_reg,
-				 ulong spi_tx_reg,
-				 ulong spi_rx_reg,
-				 ulong spi_bc_reg,
-				 ulong spi_tc_reg,
-				 ulong spi_bcc_reg)
-{
-	printf("SPL SPI SUNXI: Read SPI0 0x%x\n", addr);
-	writel(4 + bufsize, spi_bc_reg); /* Burst counter (total bytes) */
-	writel(4, spi_tc_reg);           /* Transfer counter (bytes to send) */
-	if (spi_bcc_reg)
-		writel(4, spi_bcc_reg);  /* SUN6I also needs this */
-
-	/* Send the Read Data Bytes (03h) command header */
-	writeb(0x03, spi_tx_reg);
-	// writeb((u8)(addr >> 16), spi_tx_reg);
-	writeb((u8)((addr >> 8) & 0xF), spi_tx_reg);
-	writeb((u8)(addr), spi_tx_reg);
-	writeb(0xAA, spi_tx_reg);
-
-	/* Start the data transfer */
-	setbits_le32(spi_ctl_reg, spi_ctl_xch_bitmask);
-
-	/* Wait until everything is received in the RX FIFO */
-	while ((readl(spi_fifo_reg) & 0x7F) < 4 + bufsize)
-		;
-
-	/* Skip 4 bytes */
-	readl(spi_rx_reg);
-
-	/* Read the data */
-	while (bufsize-- > 0)
-		*buf++ = readb(spi_rx_reg);
-
-	/* tSHSL time is up to 100 ns in various SPI flash datasheets */
-	udelay(1);
-}
-
-static void spi0_read_data(void *buf, u32 addr, u32 len)
-{
-	u8 *buf8 = buf;
-	u32 chunk_len;
-
-	while (len > 0) {
-		chunk_len = len;
-		if (chunk_len > SPI_READ_MAX_SIZE)
-			chunk_len = SPI_READ_MAX_SIZE;
-
-		if (IS_ENABLED(CONFIG_SUNXI_GEN_SUN6I)) {
-			sunxi_spi0_read_data(buf8, addr, chunk_len,
-					     SUN6I_SPI0_TCR,
-					     SUN6I_TCR_XCH,
-					     SUN6I_SPI0_FIFO_STA,
-					     SUN6I_SPI0_TXD,
-					     SUN6I_SPI0_RXD,
-					     SUN6I_SPI0_MBC,
-					     SUN6I_SPI0_MTC,
-					     SUN6I_SPI0_BCC);
-		} else {
-			sunxi_spi0_read_data(buf8, addr, chunk_len,
-					     SUN4I_SPI0_CTL,
-					     SUN4I_CTL_XCH,
-					     SUN4I_SPI0_FIFO_STA,
-					     SUN4I_SPI0_TX,
-					     SUN4I_SPI0_RX,
-					     SUN4I_SPI0_BC,
-					     SUN4I_SPI0_TC,
-					     0);
-		}
-
-		len  -= chunk_len;
-		buf8 += chunk_len;
-		addr += chunk_len;
-	}
 }
 
 static void spi0_load_page(u32 addr)
@@ -344,12 +284,104 @@ static void spi0_load_page(u32 addr)
 	}
 }
 
-static ulong spi_load_read(struct spl_load_info *load, ulong sector,
-			   ulong count, void *buf)
+static void sunxi_spi0_read_data(u8 *buf, u32 addr, u32 bufsize,
+				 ulong spi_ctl_reg,
+				 ulong spi_ctl_xch_bitmask,
+				 ulong spi_fifo_reg,
+				 ulong spi_tx_reg,
+				 ulong spi_rx_reg,
+				 ulong spi_bc_reg,
+				 ulong spi_tc_reg,
+				 ulong spi_bcc_reg)
 {
-	spi0_read_data(buf, sector, count);
+	addr = addr & 0x07FF;
+	//printf("sunxi SPI-NAND: Read %d bytes from cache at 0x%x\n", bufsize, addr);
+	writel(4 + bufsize, spi_bc_reg); /* Burst counter (total bytes) */
+	writel(4, spi_tc_reg);           /* Transfer counter (bytes to send) */
+	if (spi_bcc_reg)
+		writel(4, spi_bcc_reg);  /* SUN6I also needs this */
 
-	return count;
+	/* Send the Read Data Bytes (0Bh) command header */
+	writeb(0x0B, spi_tx_reg);
+	writeb((u8)((addr >> 8)), spi_tx_reg);
+	writeb((u8)(addr), spi_tx_reg);
+	writeb(DUMMY_BURST_BYTE, spi_tx_reg);
+
+	/* Start the data transfer */
+	setbits_le32(spi_ctl_reg, spi_ctl_xch_bitmask);
+
+	/* Wait until everything is received in the RX FIFO */
+	while ((readl(spi_fifo_reg) & 0x7F) < 4 + bufsize)
+		;
+
+	/* Skip 4 bytes since we send 4 */
+	readl(spi_rx_reg);
+	//readb(spi_rx_reg);
+	//readb(spi_rx_reg);
+
+	/* Read the data */
+	while (bufsize-- > 0)
+		*buf++ = readb(spi_rx_reg);
+
+	/* tSHSL time is up to 100 ns in various SPI flash datasheets */
+	ndelay(100);
+}
+
+static void sunxi_spi0_read_cache(void *buf, u32 addr, u32 len) {
+
+	if (IS_ENABLED(CONFIG_SUNXI_GEN_SUN6I)) {
+			sunxi_spi0_read_data(buf, addr, len,
+					     SUN6I_SPI0_TCR,
+					     SUN6I_TCR_XCH,
+					     SUN6I_SPI0_FIFO_STA,
+					     SUN6I_SPI0_TXD,
+					     SUN6I_SPI0_RXD,
+					     SUN6I_SPI0_MBC,
+					     SUN6I_SPI0_MTC,
+					     SUN6I_SPI0_BCC);
+		} else {
+			sunxi_spi0_read_data(buf, addr, len,
+					     SUN4I_SPI0_CTL,
+					     SUN4I_CTL_XCH,
+					     SUN4I_SPI0_FIFO_STA,
+					     SUN4I_SPI0_TX,
+					     SUN4I_SPI0_RX,
+					     SUN4I_SPI0_BC,
+					     SUN4I_SPI0_TC,
+					     0);
+		}
+}
+
+static void spi0_read_data(void *buf, u32 addr, u32 len)
+{
+	u8 *buf8 = buf;
+	u32 chunk_len;
+	u32 last_page = addr >> 11;
+	u32 curr_page;
+
+	spi0_load_page(addr);
+
+	while (len > 0) {
+		curr_page = addr >> 11;
+		if(curr_page > last_page) {
+			spi0_load_page(addr);
+			last_page = curr_page;
+		}
+
+		chunk_len = len;
+		if (chunk_len > SPI_READ_MAX_SIZE) {
+			chunk_len = SPI_READ_MAX_SIZE;
+		}
+
+		if(((addr + chunk_len) >> 11) > curr_page) {
+			chunk_len = ((curr_page + 1) << 11) - addr;
+		}
+
+		sunxi_spi0_read_cache(buf8, addr, chunk_len);
+		len  -= chunk_len;
+		buf8 += chunk_len;
+		addr += chunk_len;
+	}
 }
 
 static int sunxi_spi0_read_id(ulong spi_ctl_reg,
@@ -369,7 +401,7 @@ static int sunxi_spi0_read_id(ulong spi_ctl_reg,
 
 	/* Send the Read ID Bytes (9Fh) command header */
 	writeb(0x9F, spi_tx_reg);
-	writeb(0xAA, spi_tx_reg);
+	writeb(DUMMY_BURST_BYTE, spi_tx_reg);
 
 	/* Start the data transfer */
 	setbits_le32(spi_ctl_reg, spi_ctl_xch_bitmask);
@@ -448,9 +480,7 @@ static int spl_spi_load_image(struct spl_image_info *spl_image,
 			      struct spl_boot_device *bootdev)
 {
 	int ret = 0;
-	int i = 0;
 	int id = 0;
-	const u8 *raw;
 	struct image_header *header;
 	header = (struct image_header *)(CONFIG_SYS_TEXT_BASE);
 
@@ -459,52 +489,26 @@ static int spl_spi_load_image(struct spl_image_info *spl_image,
 
 	switch(id) {
 		default:
-			printf("SPI-NAND: Unknown chip %x\n", id);
+			printf("sunxi SPI-NAND: Unknown chip %x\n", id);
 			return -1;
 		case 0x12C2:
-			printf("SPI-NAND: Found Macronix MX35LF2GE4AB (%x)\n", id);
+			printf("sunxi SPI-NAND: Found 1Gb Macronix MX35LF1GE4AB (%x)\n", id);
+			break;
+		case 0x22C2:
+			printf("sunxi SPI-NAND: Found 2Gb Macronix MX35LF2GE4AB (%x)\n", id);
 			break;
 	}
 
-	spi0_load_page(CONFIG_SYS_SPI_U_BOOT_OFFS);
-	spi0_read_data((void *)header, 0, 0x40);
-	//printf("SPI-NAND: Loading u-boot from %x with size %x\n", 0, header->ih_size);
-	//if(!image_check_magic(header)) {
-	//	printf("SPI-NAND: Wrong header magic, what are you reading?!\n");
-	//	/* return -1; */
-	//}
-
-	printf("SPI-NAND READ:");
-	raw = (u8*)CONFIG_SYS_TEXT_BASE;
-	for(i = 0; i < 0x40; ++i) {
-		if((i % 16) == 0) {
-			printf("\n");
-		}
-		printf("%x ", raw[i]);
+	spi0_read_data((void *)header, CONFIG_SYS_SPI_U_BOOT_OFFS, 0x40);
+	ret = spl_parse_image_header(spl_image, header);
+	if (ret) {
+		printf("spl_parse_image_header: %x\n", ret);
+		return ret;
 	}
-	printf("\n");
 
-    //if (IS_ENABLED(CONFIG_SPL_LOAD_FIT) &&
-	//	image_get_magic(header) == FDT_MAGIC) {
-	//	struct spl_load_info load;
-	//	debug("Found FIT image\n");
-	//	load.dev = NULL;
-	//	load.priv = NULL;
-	//	load.filename = NULL;
-	//	load.bl_len = 1;
-	//	load.read = spi_load_read;
-	//	ret = spl_load_simple_fit(spl_image, &load,
-	//				  CONFIG_SYS_SPI_U_BOOT_OFFS, header);
-	//} else {
-	//	ret = spl_parse_image_header(spl_image, header);
-	//	if (ret)
-	//		return ret;
-	//	spi0_read_data((void *)spl_image->load_addr,
-	//		       CONFIG_SYS_SPI_U_BOOT_OFFS, spl_image->size);
-	//}
+	spi0_read_data((void *)spl_image->load_addr, CONFIG_SYS_SPI_U_BOOT_OFFS, spl_image->size);
 
 	spi0_deinit();
-
 	return ret;
 }
 /* Use priorty 0 to override the default if it happens to be linked in */

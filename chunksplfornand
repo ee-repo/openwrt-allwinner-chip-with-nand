@@ -30,7 +30,7 @@ do
 	dd if=$1 of=$tmpdir/chunked bs=1024 count=1 seek=$dub skip=$from conv=notrunc > /dev/null 2>&1
 done
 
-dd if=$1 of=$tmpdir/chunked bs=1024 seek=47 skip=24 > /dev/null 2>&1
+dd if=$1 of=$tmpdir/chunked bs=1024 seek=48 skip=24 > /dev/null 2>&1
 
 mv $tmpdir/chunked $copyto
 
