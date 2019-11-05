@@ -61,15 +61,21 @@
 		spi0: spi@01c68000 {
 			compatible = "allwinner,sun8i-h3-spi";
 			reg = <0x01c68000 0x1000>;
+			interrupts = <GIC_SPI 65 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&ccu CLK_BUS_SPI0>, <&ccu CLK_SPI0>;
+			clock-names = "ahb", "mod";
+			pinctrl-names = "default";
+			pinctrl-0 = <&spi0_pins>;
+			resets = <&ccu RST_BUS_SPI0>;
 			status = "okay";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			flash: flash@0 {
+			spi_nand: spi-nand@0 {
 				#address-cells = <1>;
 				#size-cells = <1>;
-				Compatible = "spi-nand";
-				Reg = <0>;
-				Spi-max-frequency = <50000000>;
+				compatible = "spi-nand";
+				reg = <0>;
+				spi-max-frequency = <100000000>;
 			};
 		};	
 	};

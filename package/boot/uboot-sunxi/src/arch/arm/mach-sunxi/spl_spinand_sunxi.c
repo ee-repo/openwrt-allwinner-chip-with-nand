@@ -81,6 +81,7 @@
 #define AHB_RESET_SPI0_SHIFT        20
 #define AHB_GATE_OFFSET_SPI0        20
 
+#define SPI0_CLK_DIV_NONE			0x0000
 #define SPI0_CLK_DIV_BY_2           0x1000
 #define SPI0_CLK_DIV_BY_4           0x1001
 
@@ -105,7 +106,7 @@ static void spi0_pinmux_setup(unsigned int pin_function)
 }
 
 /*
- * Setup 6 MHz from OSC24M (because the BROM is doing the same).
+ * Setup 24 MHz from OSC24M.
  */
 static void spi0_enable_clock(void)
 {
@@ -117,8 +118,8 @@ static void spi0_enable_clock(void)
 	/* Open the SPI0 gate */
 	setbits_le32(CCM_AHB_GATING0, (1 << AHB_GATE_OFFSET_SPI0));
 
-	/* Divide by 4 */
-	writel(SPI0_CLK_DIV_BY_4, IS_ENABLED(CONFIG_SUNXI_GEN_SUN6I) ?
+	/* No devide */
+	writel(SPI0_CLK_DIV_NONE, IS_ENABLED(CONFIG_SUNXI_GEN_SUN6I) ?
 				  SUN6I_SPI0_CCTL : SUN4I_SPI0_CCTL);
 	/* 24MHz from OSC24M */
 	writel((1 << 31), CCM_SPI0_CLK);

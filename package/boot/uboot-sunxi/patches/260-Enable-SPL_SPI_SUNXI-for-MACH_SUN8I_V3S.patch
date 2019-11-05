@@ -11,7 +11,7 @@ diff --git a/arch/arm/mach-sunxi/Kconfig b/arch/arm/mach-sunxi/Kconfig
 index 3c54f51..65e9c56 100644
 --- a/arch/arm/mach-sunxi/Kconfig
 +++ b/arch/arm/mach-sunxi/Kconfig
-@@ -973,7 +973,7 @@ config SPL_STACK_R_ADDR
+@@ -990,7 +990,7 @@ config SPL_STACK_R_ADDR
  
  config SPL_SPI_SUNXI
  	bool "Support for SPI Flash on Allwinner SoCs in SPL"

@@ -12,7 +12,7 @@ diff --git a/arch/arm/mach-sunxi/Kconfig b/arch/arm/mach-sunxi/Kconfig
 index 65e9c56..2f52f7e 100644
 --- a/arch/arm/mach-sunxi/Kconfig
 +++ b/arch/arm/mach-sunxi/Kconfig
-@@ -972,11 +972,19 @@ config SPL_STACK_R_ADDR
+@@ -989,11 +989,19 @@ config SPL_STACK_R_ADDR
  	default 0x4fe00000 if MACH_SUN50I_H6
  
  config SPL_SPI_SUNXI
