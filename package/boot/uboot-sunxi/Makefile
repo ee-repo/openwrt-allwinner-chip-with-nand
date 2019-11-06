@@ -1,4 +1,4 @@
-# asd
+#
 # Copyright (C) 2013-2016 OpenWrt.org
 # Copyright (C) 2017 Yousong Zhou
 #
