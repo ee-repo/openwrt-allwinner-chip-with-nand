@@ -1,11 +1,12 @@
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
-@@ -1053,7 +1053,8 @@
+@@ -1053,7 +1053,9 @@
  	sun8i-r40-bananapi-m2-ultra.dtb \
  	sun8i-v3s-licheepi-zero.dtb \
  	sun8i-v3s-licheepi-zero-dock.dtb \
 -	sun8i-v40-bananapi-m2-berry.dtb
 +	sun8i-v40-bananapi-m2-berry.dtb \
++	sun8i-v3s-rawspinandaccessuart2.dtb \
 +	sun8i-v3s-dolphinpi.dtb
  dtb-$(CONFIG_MACH_SUN9I) += \
  	sun9i-a80-optimus.dtb \

@@ -265,6 +265,11 @@ define U-Boot/DolphinPi
   BUILD_DEVICES:=sun8i-v3s-dolphinpi
 endef
 
+define U-Boot/GenericV3sBoard_SPINAND_UART2
+  BUILD_SUBTARGET:=cortexa7
+  NAME:=Generic V3s Board with SPI-NAND and stdout on UART2
+  BUILD_DEVICES:=sun8i-v3s-rawspinandaccessuart2
+endef
 
 UBOOT_TARGETS := \
 	A10-OLinuXino-Lime \
@@ -304,7 +309,8 @@ UBOOT_TARGETS := \
 	sopine_baseboard \
 	orangepi_zero_plus \
   LicheePi_Zero \
-  DolphinPi
+  DolphinPi \
+  GenericV3sBoard_SPINAND_UART2
 
 UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
 

@@ -269,4 +269,16 @@ endef
 
 TARGET_DEVICES += sun8i-v3s-dolphinpi
 
+define Device/sun8i-v3s-rawspinandaccessuart2
+  DEVICE_VENDOR := Allwinner
+  DEVICE_MODEL := Generic V3s Board
+  DEVICE_PACKAGES:=kmod-rtc-sunxi
+  SUPPORTED_DEVICES:=allwinner,sun8i-v3s
+  SUNXI_DTS:=sun8i-v3s-rawspinandaccessuart2
+  IMAGES := sdcard.img.gz
+endef
+
+TARGET_DEVICES += sun8i-v3s-rawspinandaccessuart2
+
+
 endif
