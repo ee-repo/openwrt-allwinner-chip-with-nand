@@ -1,0 +1,156 @@
+diff --git a/package/boot/uboot-sunxi/patches/221-compatible-old-dtc.patch b/package/boot/uboot-sunxi/patches/221-compatible-old-dtc.patch
+index 4056d98008..c1c78f9e96 100644
+--- a/package/boot/uboot-sunxi/patches/221-compatible-old-dtc.patch
++++ b/package/boot/uboot-sunxi/patches/221-compatible-old-dtc.patch
+@@ -32,7 +32,7 @@ dtc from kernel 4.9.
+  
+  dtc-warning := $(dtc-warning-$(findstring 1, $(KBUILD_ENABLE_EXTRA_GCC_CHECKS)))
+  dtc-warning += $(dtc-warning-$(findstring 2, $(KBUILD_ENABLE_EXTRA_GCC_CHECKS)))
+-@@ -68,11 +68,11 @@ DTC_FLAGS += $(dtc-warning)
++@@ -68,13 +68,13 @@ DTC_FLAGS += $(dtc-warning)
+  else
+  
+  # Disable noisy checks by default
+@@ -42,11 +42,15 @@ dtc from kernel 4.9.
+ -DTC_FLAGS += -Wno-pci_bridge
+ -DTC_FLAGS += -Wno-pci_device_bus_num
+ -DTC_FLAGS += -Wno-pci_device_reg
++-DTC_FLAGS += -Wno-avoid_unnecessary_addr_size
++-DTC_FLAGS += -Wno-alias_paths
+ +DTC_FLAGS += $(call dtc-option,-Wno-unit_address_vs_reg)
+ +DTC_FLAGS += $(call dtc-option,-Wno-simple_bus_reg)
+ +DTC_FLAGS += $(call dtc-option,-Wno-unit_address_format)
+ +DTC_FLAGS += $(call dtc-option,-Wno-pci_bridge)
+ +DTC_FLAGS += $(call dtc-option,-Wno-pci_device_bus_num)
+ +DTC_FLAGS += $(call dtc-option,-Wno-pci_device_reg)
+++DTC_FLAGS += $(call dtc-option,-Wno-avoid_unnecessary_addr_size)
+++DTC_FLAGS += $(call dtc-option,-Wno-alias_paths)
+  
+  endif
+diff --git a/package/boot/uboot-sunxi/patches/240-sun50i-h5-Orange-Pi-Zero-Plus-Fix-SdCard-detection.patch b/package/boot/uboot-sunxi/patches/240-sun50i-h5-Orange-Pi-Zero-Plus-Fix-SdCard-detection.patch
+deleted file mode 100644
+index 2feab76754..0000000000
+--- a/package/boot/uboot-sunxi/patches/240-sun50i-h5-Orange-Pi-Zero-Plus-Fix-SdCard-detection.patch
++++ /dev/null
+@@ -1,28 +0,0 @@
+-From ad320d4d6ad03af5ff730546113d53a47ef6a22e Mon Sep 17 00:00:00 2001
+-From: Hauke Mehrtens <hauke@hauke-m.de>
+-Date: Sun, 13 Jan 2019 17:05:09 +0100
+-Subject: [PATCH] sun50i: h5: Orange Pi Zero Plus: Fix SdCard detection
+-
+-The Detection pin is at PF6 and not at PH13 like defined before. I
+-checked the schematics and now I am am not seeing this error message any
+-more:
+-Loading Environment from FAT... Card did not respond to voltage select!
+-
+-Fixes: 76d69eb01de ("sun50i: h5: Add initial Orange Pi Zero Plus support")
+-Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+----
+- configs/orangepi_zero_plus_defconfig | 3 +--
+- 1 file changed, 1 insertion(+), 2 deletions(-)
+-
+---- a/configs/orangepi_zero_plus_defconfig
+-+++ b/configs/orangepi_zero_plus_defconfig
+-@@ -4,8 +4,7 @@ CONFIG_SPL=y
+- CONFIG_MACH_SUN50I_H5=y
+- CONFIG_DRAM_CLK=624
+- CONFIG_DRAM_ZQ=3881977
+--CONFIG_MMC0_CD_PIN="PH13"
+--CONFIG_MMC_SUNXI_SLOT_EXTRA=2
+-+CONFIG_MMC0_CD_PIN="PF6"
+- CONFIG_NR_DRAM_BANKS=1
+- # CONFIG_SYS_MALLOC_CLEAR_ON_INIT is not set
+- # CONFIG_CMD_FLASH is not set
+diff --git a/package/boot/uboot-sunxi/patches/260-Enable-SPL_SPI_SUNXI-for-MACH_SUN8I_V3S.patch b/package/boot/uboot-sunxi/patches/260-Enable-SPL_SPI_SUNXI-for-MACH_SUN8I_V3S.patch
+index d072228282..654771836e 100644
+--- a/package/boot/uboot-sunxi/patches/260-Enable-SPL_SPI_SUNXI-for-MACH_SUN8I_V3S.patch
++++ b/package/boot/uboot-sunxi/patches/260-Enable-SPL_SPI_SUNXI-for-MACH_SUN8I_V3S.patch
+@@ -11,7 +11,7 @@ diff --git a/arch/arm/mach-sunxi/Kconfig b/arch/arm/mach-sunxi/Kconfig
+ index 3c54f51..65e9c56 100644
+ --- a/arch/arm/mach-sunxi/Kconfig
+ +++ b/arch/arm/mach-sunxi/Kconfig
+-@@ -973,7 +973,7 @@ config SPL_STACK_R_ADDR
++@@ -990,7 +990,7 @@ config SPL_STACK_R_ADDR
+  
+  config SPL_SPI_SUNXI
+  	bool "Support for SPI Flash on Allwinner SoCs in SPL"
+diff --git a/package/boot/uboot-sunxi/patches/261-Enable-SPL-NANDSPI.diff b/package/boot/uboot-sunxi/patches/261-Enable-SPL-NANDSPI.diff
+index 904eb3d203..ae6fc9a7bd 100644
+--- a/package/boot/uboot-sunxi/patches/261-Enable-SPL-NANDSPI.diff
++++ b/package/boot/uboot-sunxi/patches/261-Enable-SPL-NANDSPI.diff
+@@ -12,7 +12,7 @@ diff --git a/arch/arm/mach-sunxi/Kconfig b/arch/arm/mach-sunxi/Kconfig
+ index 65e9c56..2f52f7e 100644
+ --- a/arch/arm/mach-sunxi/Kconfig
+ +++ b/arch/arm/mach-sunxi/Kconfig
+-@@ -972,11 +972,19 @@ config SPL_STACK_R_ADDR
++@@ -989,11 +989,19 @@ config SPL_STACK_R_ADDR
+  	default 0x4fe00000 if MACH_SUN50I_H6
+  
+  config SPL_SPI_SUNXI
+diff --git a/package/boot/uboot-sunxi/src/arch/arm/dts/sun8i-v3s-dolphinpi.dts b/package/boot/uboot-sunxi/src/arch/arm/dts/sun8i-v3s-dolphinpi.dts
+index 18621f3cdb..f2d22df99f 100644
+--- a/package/boot/uboot-sunxi/src/arch/arm/dts/sun8i-v3s-dolphinpi.dts
++++ b/package/boot/uboot-sunxi/src/arch/arm/dts/sun8i-v3s-dolphinpi.dts
+@@ -61,6 +61,8 @@
+ 		spi0: spi@01c68000 {
+ 			compatible = "allwinner,sun8i-h3-spi";
+ 			reg = <0x01c68000 0x1000>;
++			pinctrl-0 = <&spi0_pins>;
++			pinctrl-names = "default";
+ 			status = "okay";
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+diff --git a/package/boot/uboot-sunxi/src/configs/DolphinPi_defconfig b/package/boot/uboot-sunxi/src/configs/DolphinPi_defconfig
+index fd3c2e3560..1a73c60c57 100644
+--- a/package/boot/uboot-sunxi/src/configs/DolphinPi_defconfig
++++ b/package/boot/uboot-sunxi/src/configs/DolphinPi_defconfig
+@@ -6,14 +6,18 @@ CONFIG_DRAM_CLK=360
+ CONFIG_DRAM_ZQ=14779
+ 
+ # DTS
+-CONFIG_DEFAULT_DEVICE_TREE="sun8i-v3s-dolphinpi"
++CONFIG_DEFAULT_DEVICE_TREE="sun8i-v3s-dolphinpi.dtb"
+ CONFIG_OF_LIBFDT_OVERLAY=y
+-# CONFIG_FIT=y
+ 
+ # DEBUG
+ CONFIG_LOGLEVEL=7
+ CONFIG_CONS_INDEX=3
+ 
++### ENV
++# CONFIG_ENV_IS_IN_SPI_FLASH=y
++# CONFIG_ENV_OFFSET=y
++# CONFIG_ENV_SIZE=
++
+ ### NOR
+ ## SPI
+ # CONFIG_SPI=y
+@@ -27,18 +31,19 @@ CONFIG_CONS_INDEX=3
+ 
+ ### NAND
+ CONFIG_SPL=y
+-# CONFIG_SPL_SPI_SUPPORT=y
+-# CONFIG_SPL_BUILD=y
+-# CONFIG_SPL_NAND_DRIVERS=y
+-# CONFIG_NAND_SUNXI=y
+-# CONFIG_SPI=y
+-# CONFIG_SPI_BOOT=y
+ CONFIG_SUNXI_SPI=y
+ CONFIG_CMD_MTD=y
+ CONFIG_MTD=y
+-CONFIG_SPL_SPINAND_SUNXI=y
+ CONFIG_MTD_SPI_NAND=y
+ CONFIG_SPI=y
+-CONFIG_DM_SPI=y
+ CONFIG_SPI_MEM=y
+ CONFIG_SPI_SUNXI=y
++CONFIG_SPL_SPINAND_SUNXI=y
++CONFIG_DM_SPI=y
++CONFIG_CMD_DM=y
++CONFIG_CMD_SF=y
++CONFIG_SF_DEFAULT_BUS=0
++CONFIG_SF_DEFAULT_CS=0
++# CONFIG_ENV_SECT_SIZE=0x800
++CONFIG_SF_DEFAULT_SPEED=24000000
++CONFIG_CMD_SPI=y
+\ No newline at end of file

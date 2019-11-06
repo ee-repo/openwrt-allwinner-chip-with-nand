@@ -3,3 +3,23 @@ config SUNXI_SD_BOOT_PARTSIZE
 	depends on TARGET_sunxi
 	default 20
 
+config SUNXI_SPINAND_PAGESIZE
+	int "Boot (SPI-NAND) pagesize size (in KB)"
+	depends on TARGET_sunxi
+	default 2
+
+config SUNXI_SPINAND_OFFSET_KERNEL
+	int "Offset of the kernel in spi-nand in byte"
+	depends on TARGET_sunxi
+	default 0x0110000
+
+config SUNXI_SPINAND_OFFSET_DTB
+	int "Offset of the dtb in spi-nand in byte"
+	depends on TARGET_sunxi
+	default 0x0100000
+
+config SUNXI_SPINAND_OFFSET_ROOTFS
+	int "Offset of the rootfs in spi-nand in byte"
+	depends on TARGET_sunxi
+	default 0x0510000
+

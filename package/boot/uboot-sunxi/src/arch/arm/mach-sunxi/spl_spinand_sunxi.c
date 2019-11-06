@@ -86,6 +86,20 @@
 #define SPI0_CLK_DIV_BY_4           0x1001
 
 #define DUMMY_BURST_BYTE 			0x00
+
+#ifndef CONFIG_SPL_SPINAND_SUNXI_SPL_SIZE
+#define CONFIG_SPL_SPINAND_SUNXI_SPL_SIZE 		0x6000
+#endif
+#ifndef CONFIG_SPL_SPINAND_SUNXI_UBOOT_PADDING
+#define CONFIG_SPL_SPINAND_SUNXI_UBOOT_PADDING 	0x2000
+#endif
+#ifndef CONFIG_SPL_SPINAND_SUNXI_PAGESIZE
+#define CONFIG_SPL_SPINAND_SUNXI_PAGESIZE 		2048
+#endif
+#ifndef CONFIG_SYS_SPI_U_BOOT_OFFS
+#define CONFIG_SYS_SPI_U_BOOT_OFFS (CONFIG_SPL_SPINAND_SUNXI_SPL_SIZE * (CONFIG_SPL_SPINAND_SUNXI_PAGESIZE / 1024)) + CONFIG_SPL_SPINAND_SUNXI_UBOOT_PADDING
+#endif
+
 /*****************************************************************************/
 
 /*
@@ -451,29 +465,6 @@ static int spi0_read_id(void) {
 				     0);
 	}
 }
-
-//#define IH_MAGIC	0x27051956	/* Image Magic Number		*/
-//#define IH_NMLEN		32	/* Image Name Length		*/
-/*
- * Legacy format image header,
- * all data in network byte order (aka natural aka bigendian).
- */
-//typedef struct image_header {
-//	__be32		ih_magic;	/* Image Header Magic Number	*/
-//	__be32		ih_hcrc;	/* Image Header CRC Checksum	*/
-//	__be32		ih_time;	/* Image Creation Timestamp	*/
-//	__be32		ih_size;	/* Image Data Size		*/
-//	__be32		ih_load;	/* Data	 Load  Address		*/
-//	__be32		ih_ep;		/* Entry Point Address		*/
-//	__be32		ih_dcrc;	/* Image Data CRC Checksum	*/
-//	uint8_t		ih_os;		/* Operating System		*/
-//	uint8_t		ih_arch;	/* CPU architecture		*/
-//	uint8_t		ih_type;	/* Image Type			*/
-//	uint8_t		ih_comp;	/* Compression Type		*/
-//	uint8_t		ih_name[IH_NMLEN];	/* Image Name		*/
-//} image_header_t;
-
-#define CONFIG_SYS_SPI_U_BOOT_OFFS (0x6000 * 2) + 0x2000
 
 /*****************************************************************************/
 
