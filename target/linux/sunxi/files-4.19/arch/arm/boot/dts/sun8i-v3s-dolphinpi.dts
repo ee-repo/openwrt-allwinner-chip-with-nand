@@ -8,9 +8,9 @@
 
 	aliases {
 		serial0 = &uart2;
-		/* ethernet0 = &emac; */
+		ethernet0 = &emac;
+		ethernet1 = &esp8089;
 		spi0 = &spi0;
-		
 	};
 
 	chosen {
@@ -90,15 +90,34 @@
 			};
 		};
 	};
+
+	wifi_pwrseq: wifi_pwrseq {
+		compatible = "mmc-pwrseq-simple";
+		reset-gpios = <&pio 1 5 GPIO_ACTIVE_LOW>; /* PB5 */
+		/* The esp8089 needs 200 ms after driving wifi-en high */
+		post-power-on-delay-ms = <200>;
+	};
 };
 
-&mmc0 {
+&mmc0 { /* SD-Card */
 	pinctrl-0 = <&mmc0_pins_a>;
 	pinctrl-names = "default";
 	broken-cd;
 	bus-width = <4>;
 	vmmc-supply = <&reg_vcc3v3>;
 	status = "okay";
+};
+
+&mmc1 { /* WiFi ESP8089 */
+	status = "okay";
+	bus-width = <4>;
+	non-removable;
+
+	esp8089: sdio_wifi@1 {
+		compatible = "esp,esp8089";
+		reg = <1>;
+		esp,crystal-26M-en = <2>;
+	};
 };
 
 &usb_otg {
@@ -111,6 +130,7 @@
 	usb0_id_det-gpio = <&pio 5 6 GPIO_ACTIVE_LOW>;
 	status = "okay";
 };
+
 /*
 &i2c0 {
 	pinctrl-0 = <&i2c0_pins>;
@@ -164,11 +184,11 @@
 	};
 };
 
-/*
-&codec {
+
+/* &codec {
 	allwinner,audio-routing = "Headphone", "HP", "Headphone", "HPCOM", "MIC1", "Mic", "Mic", "HBIAS";
 	status = "okay";
-};
+}; */
 
 &lradc {
 	vref-supply = <&reg_vcc3v0>;
@@ -201,7 +221,7 @@
 		channel = <0>;
 		voltage = <800000>;
 	};
-}; */
+};
 
 &pio {
 	
@@ -210,21 +230,31 @@
 		function = "uart2";
 	};
 
-	/*
-	i2c0_pins: i2c0 {
+	
+	i2c0_pins: i2c0 { /* Display Touchscreen or J512 I2C */
 		pins = "PB6", "PB7";
 		function = "i2c0";
 	};
 
-	i2c1_pins: i2c1 {
-		pins = "PE21", "PE22";
+	twi1_clk: i2c1 {
+		pins = "PB8";
 		function = "i2c1";
+	};
+
+	bbpwm_pins: pppwm { /* PWM for BL as BITBANG-PWM */
+		pins = "PB9";
+		function = "gpio_out";
+	};
+
+	wifi_shdn: wifi {
+		pins = "PB5";
+		function = "gpio_out";
 	};
 	
 	usb0_id_detect_pin: usbid@0 {
 		pins = "PF6";
 		function = "gpio_in";
 	};
-	*/
+	
 };
 

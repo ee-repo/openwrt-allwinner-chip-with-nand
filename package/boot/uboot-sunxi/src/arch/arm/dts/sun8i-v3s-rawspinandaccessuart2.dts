@@ -45,7 +45,7 @@
 #include "sunxi-common-regulators.dtsi"
 
 / {
-	model = "Generic V3s Board with SPI-NAND";
+	model = "Generic V3s Board with SPI-NAND and stdout on UART2";
 	compatible = "allwinner,sun8i-v3s";
 
 	aliases {
