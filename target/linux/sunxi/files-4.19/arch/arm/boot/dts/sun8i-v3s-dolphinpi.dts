@@ -108,10 +108,18 @@
 	status = "okay";
 };
 
+/* &reg_dldo1 {
+	regulator-min-microvolt = <3300000>;
+	regulator-max-microvolt = <3300000>;
+	regulator-name = "vcc-wifi";
+}; */
+
 &mmc1 { /* WiFi ESP8089 */
 	status = "okay";
 	bus-width = <4>;
 	non-removable;
+	mmc-pwrseq = <&wifi_pwrseq>;
+	/* vmmc-supply = <&reg_dldo1>; */
 
 	esp8089: sdio_wifi@1 {
 		compatible = "esp,esp8089";
@@ -177,9 +185,9 @@
 			reg = <0x0110000 0x0400000>;
 		};
 
-		partition@0510000 {
+		partition@0ae0000 {
 			label = "rootfs";
-			reg = <0x0510000 0x0000000>;
+			reg = <0x0ae0000 0x0000000>;
 		};
 	};
 };

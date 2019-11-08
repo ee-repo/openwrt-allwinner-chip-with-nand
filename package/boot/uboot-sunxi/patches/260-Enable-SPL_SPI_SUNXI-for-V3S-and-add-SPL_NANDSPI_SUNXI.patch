@@ -12,7 +12,7 @@ diff --git a/arch/arm/mach-sunxi/Kconfig b/arch/arm/mach-sunxi/Kconfig
 index ffdf09f29e..723074e8a5 100644
 --- a/arch/arm/mach-sunxi/Kconfig
 +++ b/arch/arm/mach-sunxi/Kconfig
-@@ -989,13 +989,50 @@ config SPL_STACK_R_ADDR
+@@ -989,13 +989,58 @@ config SPL_STACK_R_ADDR
  	default 0x4fe00000 if MACH_SUN50I_H6
  
  config SPL_SPI_SUNXI
@@ -63,6 +63,14 @@ index ffdf09f29e..723074e8a5 100644
 +	  The sunxi BROM is only able to load 1KB per page when booting from spi-nand.
 +	  Thus the SPL is getting chunked to 1KB pages in spi-nand. To correctly calculate
 +	  the address of u-boot it is thus neccessary to know the page size of the spi-nand. 
++
++config SPL_SPINAND_SUNXI_SPL_USE_GENERIC2K_ON_UNKNOWN
++	bool "Generic SPI-NAND config with 2K page-size"
++	depends on SPL_SPINAND_SUNXI
++	default n
++	help
++	  If no known spi-nand is found, try with generic settings for spi-nand with a
++	  page-size of 2K.
 +
  config PINE64_DT_SELECTION
  	bool "Enable Pine64 device tree selection code"

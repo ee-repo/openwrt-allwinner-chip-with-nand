@@ -47,6 +47,8 @@ CONFIG_DM=y
 CONFIG_DM_SPI=y
 CONFIG_CMD_DM=y
 CONFIG_CMD_SPI=y
+CONFIG_SPL_SPINAND_SUNXI_SPL_USE_GENERIC2K_ON_UNKNOWN=y
+
 
 CONFIG_BOOTCOMMAND="mtd read spi-nand0 $kernel_addr_r 0x0110000 0x400000; mtd read spi-nand0 $fdt_addr_r 0x0100000 0x10000; bootm 0x41000000 - 0x41800000"
-CONFIG_BOOTARGS="console=ttyS0,115200 earlyprintk panic=5 rootwait mtdparts=spi0.0:1M(uboot)ro,64k(dtb)ro,4M(kernel)ro,-(rootfs) root=mtdblock3 rw rootfstype=jffs2"
+CONFIG_BOOTARGS="console=ttyS0,115200 earlyprintk panic=5 rootwait root=mtdblock3 rw rootfstype=jffs2"

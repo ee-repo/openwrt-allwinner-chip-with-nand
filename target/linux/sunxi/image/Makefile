@@ -44,10 +44,11 @@ define Build/sunxi-spinand
 endef
 
 define Build/sunxi-imageszip
-	zip -D $@ $(IMAGE_KERNEL)
-	zip -uD $@ $(DTS_DIR)/$(SUNXI_DTS).dtb
-	zip -uD $@ $(IMAGE_ROOTFS)
-	zip -uD $@ $(STAGING_DIR_IMAGE)/$(DEVICE_NAME)-u-boot-with-spl.bin
+	zip -j $@ \
+		$(IMAGE_KERNEL) \
+		$(DTS_DIR)/$(SUNXI_DTS).dtb \
+		$(IMAGE_ROOTFS) \
+		$(STAGING_DIR_IMAGE)/$(DEVICE_NAME)-u-boot-with-spl.bin
 endef
 
 # why \x00\x00\x00\x00 for zImage-initramfs
