@@ -263,6 +263,25 @@
 		pins = "PF6";
 		function = "gpio_in";
 	};
+
+	/* Parallel CSI related */
+	csi1_8bit: csi1-8bit@0 {
+		pins = "PE6","PE7","PE8","PE9","PE10","PE11","PE12","PE13","PE14","PE15";
+		bias-disable;
+		function = "csi";
+	};
+
+	csi1_clk: csi1-clk@0 {
+		pins = "PE0","PE2","PE3";
+		bias-disable;
+		function = "csi";
+	};
+
+	csi1_mclk: csi1-mclk@0 {
+		pins = "PE1";
+		bias-disable;
+		function = "csi";
+	};
 	
 };
 
