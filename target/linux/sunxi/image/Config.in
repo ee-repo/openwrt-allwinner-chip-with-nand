@@ -11,15 +11,15 @@ config SUNXI_SPINAND_PAGESIZE
 config SUNXI_SPINAND_OFFSET_KERNEL
 	int "Offset of the kernel in spi-nand in byte"
 	depends on TARGET_sunxi
-	default 0x0110000
+	default 1114112
 
 config SUNXI_SPINAND_OFFSET_DTB
 	int "Offset of the dtb in spi-nand in byte"
 	depends on TARGET_sunxi
-	default 0x0100000
+	default 1048576
 
 config SUNXI_SPINAND_OFFSET_ROOTFS
 	int "Offset of the rootfs in spi-nand in byte"
 	depends on TARGET_sunxi
-	default 0x0510000
+	default 5308416
 

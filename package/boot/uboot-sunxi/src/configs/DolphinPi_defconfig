@@ -7,7 +7,7 @@ CONFIG_DRAM_ZQ=14779
 
 # DTS
 CONFIG_DEFAULT_DEVICE_TREE="sun8i-v3s-dolphinpi"
-CONFIG_OF_LIBFDT_OVERLAY=y
+# CONFIG_OF_LIBFDT_OVERLAY=y
 
 # COMMON
 CONFIG_SPL=y
@@ -16,11 +16,30 @@ CONFIG_SPL=y
 CONFIG_LOGLEVEL=7
 CONFIG_CONS_INDEX=3
 
-### ENV
-CONFIG_ENV_IS_NOWHERE=y
-# CONFIG_ENV_IS_IN_FLASH=y
-# CONFIG_ENV_OFFSET=0x80000
-# CONFIG_ENV_SIZE=0x02000
+# UBI
+CONFIG_MTD_UBI=y
+CONFIG_CMD_UBI=y
+CONFIG_CMD_UBIFS=y
+CONFIG_RBTREE=y
+CONFIG_MTD_DEVICE=y
+CONFIG_MTD_PARTITIONS=y
+CONFIG_CMD_MTDPARTS=y
+CONFIG_LZO=y
+CONFIG_LZMA=y
+
+# ENV
+CONFIG_ENV_IS_IN_UBI=y
+CONFIG_ENV_UBI_PART="ubi0"
+CONFIG_ENV_UBI_VOLUME="ubootenv"
+CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
+
+
+# BOOT
+CONFIG_MTDIDS_DEFAULT="spi-nand0=0"
+CONFIG_MTDPARTS_DEFAULT="mtdparts=0:1M(boot),-(ubi0)"
+CONFIG_BOOTCOMMAND="ubi part ubi0; ubi read $kernel_addr_r kernel; ubi read $fdt_addr_r dtb 0x10000; bootm 0x41000000 - 0x41800000"
+CONFIG_USE_BOOTARGS=y
+CONFIG_BOOTARGS="console=ttyS0,115200 earlyprintk panic=5 rootwait ubi.mtd=1,2048 rootfstype=ubifs root=ubi0:rootfs rw"
 
 ### NOR
 ## SPI
@@ -49,6 +68,4 @@ CONFIG_CMD_DM=y
 CONFIG_CMD_SPI=y
 CONFIG_SPL_SPINAND_SUNXI_SPL_USE_GENERIC2K_ON_UNKNOWN=y
 
-
-CONFIG_BOOTCOMMAND="mtd read spi-nand0 $kernel_addr_r 0x0110000 0x400000; mtd read spi-nand0 $fdt_addr_r 0x0100000 0x10000; bootm 0x41000000 - 0x41800000"
-CONFIG_BOOTARGS="console=ttyS0,115200 earlyprintk panic=5 rootwait root=mtdblock3 rw rootfstype=jffs2"
+#env set mtdids "spi-nand0=0" ; env set mtdparts "mtdparts=0:1M(boot),-(ubi0)"
