@@ -77,6 +77,15 @@
 				reg = <0>;
 				/* The layout on the DolphinPi is very good, 100mhz are possible! */
 				spi-max-frequency = <24000000>;
+
+				boot@0 {
+					label = "boot";
+					reg = <0x0000000 0x0100000>;
+				};
+				ubi0@100000 {
+					label = "ubi0";
+					reg = <0x0100000 0x0000000>;
+				};
 			};
 		};	
 	};

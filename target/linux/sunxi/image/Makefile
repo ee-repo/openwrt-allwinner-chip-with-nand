@@ -43,6 +43,12 @@ define Build/sunxi-spinand
 		$(CONFIG_SUNXI_SPINAND_PAGESIZE)
 endef
 
+define Build/sunxi-ubispinand
+	./gen_sunxi_spinand_onlyboot_img.sh $@ \
+		$(STAGING_DIR_IMAGE)/$(DEVICE_NAME)-u-boot-with-spl.bin \
+		$(CONFIG_SUNXI_SPINAND_PAGESIZE)
+endef
+
 define Build/sunxi-imageszip
 	zip -j $@ \
 		$(IMAGE_KERNEL) \
@@ -56,11 +62,11 @@ define Device/Default
   PROFILES := Default
   DEVICE_VARS := SUNXI_DTS SUNXI_UBOOT
   KERNEL_NAME := zImage
-  KERNEL := kernel-bin | uImage none
-  IMAGES := sdcard.img.gz spinand.img.gz images.zip
-  IMAGE/images.zip := sunxi-imageszip
+  DEVICE_DTS := $(SUNXI_DTS)
+  KERNEL := kernel-bin | uImage none 
+  IMAGES := sdcard.img.gz spinand.img.gz
   IMAGE/sdcard.img.gz := sunxi-sdcard | append-metadata | gzip
-  IMAGE/spinand.img.gz := sunxi-spinand | append-metadata | gzip
+  IMAGE/spinand.img.gz := sunxi-spinand | pad-rootfs | append-metadata | gzip
 endef
 
 include cortex-a7.mk
