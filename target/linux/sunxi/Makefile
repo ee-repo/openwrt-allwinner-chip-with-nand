@@ -10,8 +10,8 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=sunxi
 BOARDNAME:=Allwinner A1x/A20/A3x/R40/V3s
-FEATURES:=fpu usb ext4 display rtc squashfs ubifs
-SUBTARGETS:=cortexa8 cortexa7 cortexa53
+FEATURES:=fpu usb ext4 display rtc squashfs
+SUBTARGETS:=cortexa8 cortexa7 cortexa53 cortexa7-v3s
 MAINTAINER:=Zoltan HERPAI <wigyori@uid0.hu>
 
 KERNEL_PATCHVER:=4.19

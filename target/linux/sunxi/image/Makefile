@@ -1,7 +1,6 @@
 #
 # Copyright (C) 2013-2016 OpenWrt.org
 # Copyright (C) 2016 Yousong Zhou
-# Copyright (C) 2019 Benedikt-Alexander Mokroß (iCOGNIZE GmbH)
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -30,31 +29,10 @@ define Build/sunxi-sdcard
 	rm -f $@.boot
 endef
 
-# SYNTAX: $0 <outputfile> <kernel> <kernel offset> <dtb> <dtb offset> <rootfs image> <rootfs offset> <u-boot image> <nand page size in kb>
-define Build/sunxi-spinand
-	./gen_sunxi_spinand_img.sh $@ \
-		$(IMAGE_KERNEL) \
-		$(CONFIG_SUNXI_SPINAND_OFFSET_KERNEL) \
-		$(DTS_DIR)/$(SUNXI_DTS).dtb \
-		$(CONFIG_SUNXI_SPINAND_OFFSET_DTB) \
-		$(IMAGE_ROOTFS) \
-		$(CONFIG_SUNXI_SPINAND_OFFSET_ROOTFS) \
-		$(STAGING_DIR_IMAGE)/$(DEVICE_NAME)-u-boot-with-spl.bin \
-		$(CONFIG_SUNXI_SPINAND_PAGESIZE)
-endef
-
-define Build/sunxi-ubispinand
+define Build/sunxi-spinandboot
 	./gen_sunxi_spinand_onlyboot_img.sh $@ \
 		$(STAGING_DIR_IMAGE)/$(DEVICE_NAME)-u-boot-with-spl.bin \
 		$(CONFIG_SUNXI_SPINAND_PAGESIZE)
-endef
-
-define Build/sunxi-imageszip
-	zip -j $@ \
-		$(IMAGE_KERNEL) \
-		$(DTS_DIR)/$(SUNXI_DTS).dtb \
-		$(IMAGE_ROOTFS) \
-		$(STAGING_DIR_IMAGE)/$(DEVICE_NAME)-u-boot-with-spl.bin
 endef
 
 # why \x00\x00\x00\x00 for zImage-initramfs
@@ -62,14 +40,13 @@ define Device/Default
   PROFILES := Default
   DEVICE_VARS := SUNXI_DTS SUNXI_UBOOT
   KERNEL_NAME := zImage
-  DEVICE_DTS := $(SUNXI_DTS)
-  KERNEL := kernel-bin | uImage none 
-  IMAGES := sdcard.img.gz spinand.img.gz
+  KERNEL := kernel-bin | uImage none
+  IMAGES := sdcard.img.gz
   IMAGE/sdcard.img.gz := sunxi-sdcard | append-metadata | gzip
-  IMAGE/spinand.img.gz := sunxi-spinand | pad-rootfs | append-metadata | gzip
 endef
 
 include cortex-a7.mk
+include cortex-a7-v3s.mk
 include cortex-a8.mk
 include cortex-a53.mk
 

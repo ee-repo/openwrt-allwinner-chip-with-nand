@@ -23,19 +23,7 @@
 			status = "disabled";
 		}; */
 	};
-	
-	/* leds {
-		compatible = "gpio-leds";
-
-		act_led {
-			label = "act_led:green:usr";
-			gpios = <&pio 1 2 GPIO_ACTIVE_HIGH>; /* PB2 */ /*
-			linux,default-trigger = "mmc0";
-			default-state = "off";
-		};
-
-	}; */
-	
+		
 	soc {
 		syscon: syscon@1c00000 {
 			compatible = "allwinner,sun8i-v3s-system-controller",
