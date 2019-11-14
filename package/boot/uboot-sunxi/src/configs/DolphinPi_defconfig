@@ -6,6 +6,8 @@ CONFIG_DRAM_CLK=360
 CONFIG_DRAM_ZQ=14779
 CONFIG_SUN8I_EMAC=y
 CONFIG_DM_ETH=y
+CONFIG_MII=y
+CONFIG_DM_MDIO_MUX=y
 
 # DTS
 CONFIG_DEFAULT_DEVICE_TREE="sun8i-v3s-dolphinpi"
@@ -41,7 +43,7 @@ CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
 # BOOT
 CONFIG_MTDIDS_DEFAULT="spi-nand0=0"
 CONFIG_MTDPARTS_DEFAULT="mtdparts=0:1M(boot),-(ubi0)"
-CONFIG_BOOTCOMMAND="ubi part ubi0; ubi read $kernel_addr_r kernel; ubi read $fdt_addr_r dtb 0x10000; bootm 0x41000000 - 0x41800000"
+CONFIG_BOOTCOMMAND="ubifsmount ubi0:kernel; ubifsload $kernel_addr_r uImage; ubifsload $fdt_addr_r dtb; bootm 0x41000000 - 0x41800000"
 CONFIG_USE_BOOTARGS=y
 CONFIG_BOOTARGS="console=ttyS0,115200 earlyprintk panic=5 rootwait ubi.mtd=1,2048 rootfstype=ubifs root=ubi0:rootfs rw"
 

@@ -35,6 +35,13 @@ define Build/sunxi-spinandboot
 		$(CONFIG_SUNXI_SPINAND_PAGESIZE)
 endef
 
+define Build/sunxi-kernelubifs
+	./gen_sunxi_kernel_ubifs.sh $@ \
+		$(DTS_DIR)/$(SUNXI_DTS).dtb \
+		$(CONFIG_SUNXI_SPINAND_PAGESIZE) \
+		$(CONFIG_SUNXI_SPINAND_BLOCKIZE)
+endef
+
 # why \x00\x00\x00\x00 for zImage-initramfs
 define Device/Default
   PROFILES := Default

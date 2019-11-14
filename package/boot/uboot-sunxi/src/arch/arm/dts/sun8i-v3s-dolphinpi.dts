@@ -78,7 +78,9 @@
 			clock-names = "stmmaceth";
 			#address-cells = <1>;
 			#size-cells = <0>;
+
 			phy-handle = <&int_mii_phy>;
+			phy = <&int_mii_phy>;
 			phy-mode = "mii";
 			status = "okay";
 			allwinner,leds-active-low;
@@ -90,7 +92,7 @@
 			};
 
 			mdio-mux {
-				compatible = "mdio-mux", "allwinner,sun8i-h3-mdio-mux";
+				compatible = "allwinner,sun8i-h3-mdio-mux";
 				#address-cells = <1>;
 				#size-cells = <0>;
 
@@ -103,6 +105,7 @@
 					#size-cells = <0>;
 					
 					int_mii_phy: ethernet-phy@1 {
+						compatible = "ethernet-phy-ieee802.3-c22";
 						reg = <1>;
 						clocks = <&ccu CLK_BUS_EPHY>;
 						resets = <&ccu RST_BUS_EPHY>;
@@ -130,7 +133,7 @@
 				compatible = "spi-nand";
 				reg = <0>;
 				/* The layout on the DolphinPi is very good, 100mhz are possible! */
-				spi-max-frequency = <50000000>;
+				spi-max-frequency = <100000000>;
 
 				boot@0 {
 					label = "boot";
