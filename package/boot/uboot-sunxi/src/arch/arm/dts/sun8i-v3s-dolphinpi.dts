@@ -51,6 +51,7 @@
 	aliases {
 		serial2 = &uart2;
 		spi0 = &spi0;
+		ethernet0 = &emac;
 	};
 
 	chosen {
@@ -58,6 +59,59 @@
 	};
 
 	soc {
+		syscon: syscon@1c00000 {
+			compatible = "allwinner,sun8i-v3s-system-controller",
+			"syscon";
+			reg = <0x01c00000 0x1000>;
+		};
+
+
+		emac: ethernet@1c30000 {
+			compatible = "allwinner,sun8i-v3s-emac";
+			syscon = <&syscon>;
+			reg = <0x01c30000 0x104>;
+			interrupts = <GIC_SPI 82 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "macirq";
+			resets = <&ccu RST_BUS_EMAC>;
+			reset-names = "stmmaceth";
+			clocks = <&ccu CLK_BUS_EMAC>;
+			clock-names = "stmmaceth";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			phy-handle = <&int_mii_phy>;
+			phy-mode = "mii";
+			status = "okay";
+			allwinner,leds-active-low;
+			
+			mdio: mdio {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				compatible = "snps,dwmac-mdio";
+			};
+
+			mdio-mux {
+				compatible = "mdio-mux", "allwinner,sun8i-h3-mdio-mux";
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				mdio-parent-bus = <&mdio>;
+
+				int_mdio: mdio@1 {
+					compatible = "allwinner,sun8i-h3-mdio-internal";
+					reg = <1>;
+					#address-cells = <1>;
+					#size-cells = <0>;
+					
+					int_mii_phy: ethernet-phy@1 {
+						reg = <1>;
+						clocks = <&ccu CLK_BUS_EPHY>;
+						resets = <&ccu RST_BUS_EPHY>;
+						phy-is-integrated;
+					};
+				};
+			};
+		};
+		
 		spi0: spi@01c68000 {
 			compatible = "allwinner,sun8i-h3-spi";
 			reg = <0x01c68000 0x1000>;
@@ -76,7 +130,7 @@
 				compatible = "spi-nand";
 				reg = <0>;
 				/* The layout on the DolphinPi is very good, 100mhz are possible! */
-				spi-max-frequency = <24000000>;
+				spi-max-frequency = <50000000>;
 
 				boot@0 {
 					label = "boot";

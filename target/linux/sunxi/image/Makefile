@@ -46,7 +46,7 @@ define Device/Default
 endef
 
 include cortex-a7.mk
-include cortex-a7-v3s.mk
+include cortex-a7-v3s-spinand.mk
 include cortex-a8.mk
 include cortex-a53.mk
 

@@ -230,7 +230,6 @@ define U-Boot/sopine_baseboard
   UENV:=a64
 endef
 
-
 define U-Boot/orangepi_zero_plus
   BUILD_SUBTARGET:=cortexa53
   NAME:=Xunlong Orange Pi Zero Plus
@@ -260,13 +259,13 @@ define U-Boot/LicheePi_Zero
 endef
 
 define U-Boot/DolphinPi
-  BUILD_SUBTARGET:=cortexa7
+  BUILD_SUBTARGET:=cortexa7v3sspinand
   NAME:=DolphinPi
   BUILD_DEVICES:=sun8i-v3s-dolphinpi
 endef
 
 define U-Boot/GenericV3sBoard_SPINAND_UART2
-  BUILD_SUBTARGET:=cortexa7
+  BUILD_SUBTARGET:=cortexa7v3sspinand
   NAME:=Generic V3s Board with SPI-NAND and stdout on UART2
   BUILD_DEVICES:=sun8i-v3s-rawspinandaccessuart2
 endef

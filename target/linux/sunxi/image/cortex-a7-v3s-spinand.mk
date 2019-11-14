@@ -1,4 +1,4 @@
-ifeq ($(SUBTARGET),cortexa7-v3s)
+ifeq ($(SUBTARGET),cortexa7v3sspinand)
 
 define Device/sun8i-v3s-dolphinpi
   DEVICE_VENDOR := Petit-Miner

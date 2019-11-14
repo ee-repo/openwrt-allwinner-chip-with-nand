@@ -7,7 +7,7 @@
 
 include $(TOPDIR)/rules.mk
 
-BOARDNAME:=Allwinner V3s
+BOARDNAME:=Allwinner V3s (SPI-NAND)
 FEATURES+=ubifs
 CPU_TYPE:=cortex-a7
 CPU_SUBTYPE:=neon-vfpv4
