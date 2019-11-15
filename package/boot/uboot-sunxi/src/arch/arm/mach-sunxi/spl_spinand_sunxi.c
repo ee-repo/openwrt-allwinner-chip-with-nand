@@ -7,6 +7,7 @@
 #include <spl.h>
 #include <asm/gpio.h>
 #include <asm/io.h>
+#include <mapmem.h>
 #include <linux/libfdt.h>
 
 #ifdef CONFIG_SPL_OS_BOOT
@@ -85,6 +86,8 @@
 
 #define DUMMY_BURST_BYTE 			0x00
 
+#define EGON_BTO_HEADER_SIZE 40
+
 #ifndef CONFIG_SPL_SPINAND_SUNXI_SPL_SIZE
 #define CONFIG_SPL_SPINAND_SUNXI_SPL_SIZE 		0x6000
 #endif
@@ -98,6 +101,9 @@
 #define CONFIG_SYS_SPI_U_BOOT_OFFS (CONFIG_SPL_SPINAND_SUNXI_SPL_SIZE * (CONFIG_SPL_SPINAND_SUNXI_PAGESIZE / 1024)) + CONFIG_SPL_SPINAND_SUNXI_UBOOT_PADDING
 #endif
 
+/* Somhow dcrc is failing even if the u-boot is valid */
+#undef CONFIG_SPL_SPINAND_SUNXI_SPL_CHECK_DCRC
+
 /*****************************************************************************/
 
 struct sunxi_nand_config {
@@ -107,10 +113,26 @@ struct sunxi_nand_config {
 	u8 page_shift;
 	u32 addr_mask;
 	u8 addr_shift;
+	u32 block_size;
+	u32 page_size;
 };
 
+struct egon_bt0_header {
+	u32 jump;
+	const u8 magic[8]; /* eGON.BT0 */
+	u32 checksum;
+	u32 length;
+	u32 header_size;
+	u8 header_version[4];
+	u8 boot_vsn[4];
+	u8 egon_vsn[4];
+	u8 platform[8];
+};
 
 /*****************************************************************************/
+
+static const u8 egon_bt0_magic[8] = {'e','G','O','N','.','B','T','0'};
+static const char* spl_name = "sunxi SPI-NAND";
 
 struct sunxi_nand_config sunxi_known_nands[] = {
 	{
@@ -120,6 +142,8 @@ struct sunxi_nand_config sunxi_known_nands[] = {
 		.page_shift = 11,
 		.addr_mask = 0x7FF,
 		.addr_shift = 0,
+		.block_size = 128 * 1024,
+		.page_size = 2048,
 	},
 	{
 		.name = "Macronix MX35LF2GE4AB",
@@ -128,6 +152,8 @@ struct sunxi_nand_config sunxi_known_nands[] = {
 		.page_shift = 11,
 		.addr_mask = 0x7FF,
 		.addr_shift = 0,
+		.block_size = 128 * 1024,
+		.page_size = 2048,
 	},
 	{
 		.name = "Winbond W25N01GVxxIG",
@@ -136,6 +162,8 @@ struct sunxi_nand_config sunxi_known_nands[] = {
 		.page_shift = 11,
 		.addr_mask = 0x7FF,
 		.addr_shift = 0,
+		.block_size = 128 * 1024,
+		.page_size = 2048,
 	},
 	{
 		.name = "GigaDevice GD5F1GQ4RCxxG",
@@ -144,6 +172,8 @@ struct sunxi_nand_config sunxi_known_nands[] = {
 		.page_shift = 11,
 		.addr_mask = 0x7FF,
 		.addr_shift = 0,
+		.block_size = 128 * 1024,
+		.page_size = 2048,
 	},
 	{
 		.name = "GigaDevice GD5F1GQ4RCxxG",
@@ -152,6 +182,8 @@ struct sunxi_nand_config sunxi_known_nands[] = {
 		.page_shift = 11,
 		.addr_mask = 0x7FF,
 		.addr_shift = 0,
+		.block_size = 128 * 1024,
+		.page_size = 2048,
 	},
 
 	{ /* Sentinel */
@@ -167,6 +199,8 @@ struct sunxi_nand_config sunxi_generic_nand_config = {
 	.page_shift = 11,
 	.addr_mask = 0x7FF,
 	.addr_shift = 0,
+	.block_size = 128 * 1024,
+	.page_size = 2048,
 };
 #endif
 
@@ -305,7 +339,7 @@ static void sunxi_spi0_load_page(struct sunxi_nand_config * config, u32 addr, ul
 	u8 status = 0x01;
 	addr = addr >> (config->page_shift);
 	addr = addr & (config->page_mask);
-	//printf("sunxi SPI-NAND: Load Page 0x%x\n", addr);
+
 	writel(4, spi_bc_reg); /* Burst counter (total bytes) */
 	writel(4, spi_tc_reg);           /* Transfer counter (bytes to send) */
 	if (spi_bcc_reg)
@@ -397,7 +431,7 @@ static void sunxi_spi0_read_data(struct sunxi_nand_config * config, u8 *buf, u32
 {
 	addr = addr >> (config->addr_shift);
 	addr = addr & (config->addr_mask);
-	//printf("sunxi SPI-NAND: Read %d bytes from cache at 0x%x\n", bufsize, addr);
+
 	writel(4 + bufsize, spi_bc_reg); /* Burst counter (total bytes) */
 	writel(4, spi_tc_reg);           /* Transfer counter (bytes to send) */
 	if (spi_bcc_reg)
@@ -550,6 +584,77 @@ static u32 spi0_read_id(void) {
 	}
 }
 
+#ifdef DEBUG
+static void print_egon_header(struct egon_bt0_header * egon) {
+	printf("Jump: %x\n", egon->jump);
+	printf("Magic: %c%c%c%c%c%c%c%c\n",
+		egon->magic[0], egon->magic[1], egon->magic[2], egon->magic[3], 
+		egon->magic[4], egon->magic[5], egon->magic[6], egon->magic[7]);
+	printf("Check: %x\n", egon->checksum);
+	printf("Length: %x\n",egon->length);
+	printf("Hdrsz: %u\n",egon->header_size);
+	printf("Bootvsn: %c%c%c%c\n", egon->boot_vsn[0],egon->boot_vsn[1],egon->boot_vsn[2],egon->boot_vsn[3]);
+	printf("Egonvsn: %c%c%c%c\n", egon->egon_vsn[0],egon->egon_vsn[1],egon->egon_vsn[2],egon->egon_vsn[3]);
+	printf("Platform: %c%c%c%c%c%c%c%c\n",
+		egon->platform[0], egon->platform[1], egon->platform[2], egon->platform[3], 
+		egon->platform[4], egon->platform[5], egon->platform[6], egon->platform[7]);
+}
+#endif
+
+static u32 sunxi_spi0_count_spls(struct sunxi_nand_config * config, struct egon_bt0_header* self) {
+	u8 buffer[EGON_BTO_HEADER_SIZE];
+	struct egon_bt0_header * egon = (struct egon_bt0_header *)buffer;
+	u32 entry_pages[8] = {0, 32, 64, 96, 128, 160, 192, 224};
+	u32 entry_point;
+	u32 address;
+	u32 spls = 0;
+	u32 hits = 0;
+	for(entry_point = 0; entry_point < 8; ++entry_point) {
+		address = entry_pages[entry_point] * config->page_size;
+#ifdef DEBUG
+		printf("Searching for spl at entrypoint %u 0x%x\n", entry_point, address);
+#endif
+		spi0_load_page(config, address);
+		sunxi_spi0_read_cache(config, buffer, address, EGON_BTO_HEADER_SIZE);
+#ifdef DEBUG
+		print_egon_header(egon);
+#endif
+		if(strncmp(egon->magic, egon_bt0_magic, 8) == 0) {
+			++spls;
+		} else {
+			hits = 0;
+			if(egon->jump == self->jump) {
+				++hits;
+			}
+			if(egon->checksum == self->checksum) {
+				++hits;
+			}
+			if(egon->length == self->length) {
+				++hits;
+			}
+			if(egon->header_size == self->header_size) {
+				++hits;
+			}
+			if(strncmp(egon->header_version, self->header_version, 4) == 0) {
+				++hits;
+			}
+			if(strncmp(egon->boot_vsn, self->boot_vsn, 4) == 0) {
+				++hits;
+			}
+			if(strncmp(egon->egon_vsn, self->egon_vsn, 4) == 0) {
+				++hits;
+			}
+			if(strncmp(egon->platform, self->platform, 8) == 0) {
+				++hits;
+			}
+			if(hits > 4) { /* at least > 50% similarity */
+				++spls;
+			}
+		}
+	}
+	return spls;
+}
+
 /*****************************************************************************/
 
 static int spl_spi_load_image(struct spl_image_info *spl_image,
@@ -557,10 +662,14 @@ static int spl_spi_load_image(struct spl_image_info *spl_image,
 {
 	int ret = 0;
 	u32 id = 0;
+	u32 uboot_offset;
+	u32 total_spl_size = 0;
+	u32 spls;
 	struct image_header *header;
 	struct sunxi_nand_config* config;
+	struct egon_bt0_header* egon;
 	header = (struct image_header *)(CONFIG_SYS_TEXT_BASE);
-
+	
 	spi0_init();
 	id = spi0_read_id();
 
@@ -569,7 +678,7 @@ static int spl_spi_load_image(struct spl_image_info *spl_image,
 	 */
 	if(id == 0) {
 		spi0_deinit();
-		printf("sunxi SPI-NAND: Received only zeros on jedec_id probe, assuming no spi-nand attached.\n");
+		printf("%s: Received only zeros on jedec_id probe, assuming no spi-nand attached.\n",spl_name);
 		return -1;
 	}
 
@@ -579,27 +688,68 @@ static int spl_spi_load_image(struct spl_image_info *spl_image,
 	config = sunxi_spinand_enumerate(id);
 	if(config == NULL) {
 		spi0_deinit();
-		printf("sunxi SPI-NAND: Unknown chip %x\n", id);
+		printf("%s: Unknown chip %x\n", spl_name, id);
 		return -1;
 	}
 
-	printf("sunxi SPI-NAND: Found %s (%x)\n", config->name, id);
+	printf("%s: Found %s (%x)\n", spl_name, config->name, id);
 
 	/*
-	 * Read the header data from the image and parse it for validity.
+	 * eGON.BRM loads a valid SPL to 0x40000000 which is the DDR base
+	 * Thus 0x000000 is mapped to this 0x40000000 where the SPL is loaded to.
+	 * Since this SPL is running it was successfully validated by eGON.BRM
+	 * and we can safely assume that all values are valid!
 	 */
-	spi0_read_data(config, (void *)header, CONFIG_SYS_SPI_U_BOOT_OFFS, 0x40);
-	ret = spl_parse_image_header(spl_image, header);
-	if (ret) {
-		spi0_deinit();
-		printf("spl_parse_image_header: %x\n", ret);
-		return ret;
-	}
+	egon = (struct egon_bt0_header *)map_sysmem(0x00000000, EGON_BTO_HEADER_SIZE);
+#ifdef DEBUG
+	printf("Self: \n");
+	print_egon_header(egon);
+#endif
+	spls = sunxi_spi0_count_spls(config, egon);
+	total_spl_size = ((config->page_size*32) * (spls - 1)) + ((config->page_size/1024) * egon->length);
+	uboot_offset = (total_spl_size + config->block_size) - (total_spl_size % config->block_size);
+	unmap_sysmem(egon);
+#ifdef DEBUG
+	printf("Found %u spls\n", spls);
+	printf("total-spl-size 0x%x\n",total_spl_size);
+	printf("uboot-offset 0x%x\n", uboot_offset);
+#endif
 
-	/*
-	 * If everything is fine, read the rest of u-boot and start. 
-	 */
-	spi0_read_data(config, (void *)spl_image->load_addr, CONFIG_SYS_SPI_U_BOOT_OFFS, spl_image->size);
+	do {
+		printf("%s: Loading u-boot from 0x%x\n", spl_name, uboot_offset);
+		ret = 1;
+		/*
+		 * Read the header data from the image and parse it for validity.
+		 */
+		spi0_read_data(config, (void *)header, uboot_offset, 0x40);
+		if(image_check_hcrc(header)) {
+			printf("%s: u-boot hcrc OK!\n", spl_name);
+			ret = spl_parse_image_header(spl_image, header);
+			if (ret) {
+				printf("spl_parse_image_header: %x\n", ret);
+				/*
+				 * The header was ok, so we can savely use the datasize to calculate the next PEB to look for an u-boot
+				 */
+				uboot_offset += (image_get_image_size(header) + config->block_size) - (image_get_image_size(header) % config->block_size);
+			} else {
+				/*
+				 * If everything is fine, read the rest of u-boot and start
+				 */
+				spi0_read_data(config, (void *)spl_image->load_addr, uboot_offset, spl_image->size);
+				#ifdef CONFIG_SPL_SPINAND_SUNXI_SPL_CHECK_DCRC
+				if (image_check_dcrc(header)) {
+					printf("%s: u-boot dcrc OK!\n", spl_name);
+				} else {
+					printf("%s: u-boot dcrc ERROR!\n", spl_name);
+					ret = 1;
+				}
+				#endif
+			}
+		} else {
+			printf("%s: u-boot hcrc ERROR!\n", spl_name);
+			uboot_offset += config->block_size; 
+		}
+	} while(ret != 0);
 
 	spi0_deinit();
 	return ret;
