@@ -258,6 +258,12 @@ define U-Boot/LicheePi_Zero
   BUILD_DEVICES:=sun8i-v3s-licheepi-zero
 endef
 
+define U-Boot/LicheePi_Zero_SPINAND
+  BUILD_SUBTARGET:=cortexa7v3sspinand
+  NAME:=LicheePi Zero (SPI-NAND)
+  BUILD_DEVICES:=sun8i-v3s-licheepi-zero-spinand
+endef
+
 define U-Boot/DolphinPi
   BUILD_SUBTARGET:=cortexa7v3sspinand
   NAME:=DolphinPi
@@ -308,6 +314,7 @@ UBOOT_TARGETS := \
 	sopine_baseboard \
 	orangepi_zero_plus \
   LicheePi_Zero \
+  LicheePi_Zero_SPINAND \
   DolphinPi \
   GenericV3sBoard_SPINAND_UART2
 
