@@ -1,5 +1,8 @@
 /*
- * Copyright (C) 2019 Benedikt-Alexander Mokroß <bam@icognize.de>
+ * Copyright (C) 2016 Icenowy Zheng <icenowy@aosc.xyz>
+ *
+ * Based on sun8i-h3-orangepi-one.dts, which is:
+ *   Copyright (C) 2016 Hans de Goede <hdegoede@redhat.com>
  *
  * This file is dual-licensed: you can use it either under the terms
  * of the GPL or the X11 license, at your option. Note that this dual
@@ -41,151 +44,180 @@
  */
 
 /dts-v1/;
-#include "sun8i-v3s.dtsi"
+#include "sun8i-h3.dtsi"
 #include "sunxi-common-regulators.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
 / {
-	model = "Dolphin Pi";
-	compatible = "dolphinpi", "allwinner,sun8i-v3s";
+	model = "Xunlong Orange Pi Zero";
+	compatible = "xunlong,orangepi-zero", "allwinner,sun8i-h2-plus";
 
 	aliases {
-		serial2 = &uart2;
-		spi0 = &spi0;
+		serial0 = &uart0;
+		/* ethernet0 is the H3 emac, defined in sun8i-h3.dtsi */
 		ethernet0 = &emac;
+		ethernet1 = &xr819;
 	};
 
 	chosen {
-		stdout-path = "serial2:115200n8";
+		stdout-path = "serial0:115200n8";
 	};
 
-	soc {
-		syscon: syscon@1c00000 {
-			compatible = "allwinner,sun8i-v3s-system-controller",
-			"syscon";
-			reg = <0x01c00000 0x1000>;
+	leds {
+		compatible = "gpio-leds";
+
+		pwr_led {
+			label = "orangepi:green:pwr";
+			gpios = <&r_pio 0 10 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
 		};
 
-
-		emac: ethernet@1c30000 {
-			compatible = "allwinner,sun8i-v3s-emac";
-			syscon = <&syscon>;
-			reg = <0x01c30000 0x104>;
-			interrupts = <GIC_SPI 82 IRQ_TYPE_LEVEL_HIGH>;
-			interrupt-names = "macirq";
-			resets = <&ccu RST_BUS_EMAC>;
-			reset-names = "stmmaceth";
-			clocks = <&ccu CLK_BUS_EMAC>;
-			clock-names = "stmmaceth";
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			phy-handle = <&int_mii_phy>;
-			phy = <&int_mii_phy>;
-			phy-mode = "mii";
-			status = "okay";
-			allwinner,leds-active-low;
-			
-			mdio: mdio {
-				#address-cells = <1>;
-				#size-cells = <0>;
-				compatible = "snps,dwmac-mdio";
-			};
-
-			mdio-mux {
-				compatible = "allwinner,sun8i-h3-mdio-mux";
-				#address-cells = <1>;
-				#size-cells = <0>;
-
-				mdio-parent-bus = <&mdio>;
-
-				int_mdio: mdio@1 {
-					compatible = "allwinner,sun8i-h3-mdio-internal";
-					reg = <1>;
-					#address-cells = <1>;
-					#size-cells = <0>;
-					
-					int_mii_phy: ethernet-phy@1 {
-						compatible = "ethernet-phy-ieee802.3-c22";
-						reg = <1>;
-						clocks = <&ccu CLK_BUS_EPHY>;
-						resets = <&ccu RST_BUS_EPHY>;
-						phy-is-integrated;
-					};
-				};
-			};
+		status_led {
+			label = "orangepi:red:status";
+			gpios = <&pio 0 17 GPIO_ACTIVE_HIGH>;
 		};
-		
-		spi0: spi@01c68000 {
-			compatible = "allwinner,sun8i-h3-spi";
-			reg = <0x01c68000 0x1000>;
-			interrupts = <GIC_SPI 65 IRQ_TYPE_LEVEL_HIGH>;
-			clocks = <&ccu CLK_BUS_SPI0>, <&ccu CLK_SPI0>;
-			clock-names = "ahb", "mod";
-			pinctrl-names = "default";
-			pinctrl-0 = <&spi0_pins>;
-			resets = <&ccu RST_BUS_SPI0>;
-			status = "okay";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			spi_nand: spi-nand@0 {
-				#address-cells = <1>;
-				#size-cells = <1>;
-				compatible = "spi-nand";
-				reg = <0>;
-				/* The layout on the DolphinPi is very good, 100mhz are possible! */
-				spi-max-frequency = <100000000>;
-
-				boot@0 {
-					label = "boot";
-					reg = <0x0000000 0x0100000>;
-				};
-				ubi0@100000 {
-					label = "ubi0";
-					reg = <0x0100000 0x0000000>;
-				};
-			};
-		};	
 	};
+
+	reg_vcc_wifi: reg_vcc_wifi {
+		compatible = "regulator-fixed";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-name = "vcc-wifi";
+		enable-active-high;
+		gpio = <&pio 0 20 GPIO_ACTIVE_HIGH>;
+	};
+
+	reg_vdd_cpux: vdd-cpux-regulator {
+		compatible = "regulator-gpio";
+		regulator-name = "vdd-cpux";
+		regulator-type = "voltage";
+		regulator-boot-on;
+		regulator-always-on;
+		regulator-min-microvolt = <1100000>;
+		regulator-max-microvolt = <1300000>;
+		regulator-ramp-delay = <50>; /* 4ms */
+
+		gpios = <&r_pio 0 6 GPIO_ACTIVE_HIGH>; /* PL6 */
+		enable-active-high;
+		gpios-states = <1>;
+		states = <1100000 0
+			  1300000 1>;
+	};
+
+	wifi_pwrseq: wifi_pwrseq {
+		compatible = "mmc-pwrseq-simple";
+		reset-gpios = <&r_pio 0 7 GPIO_ACTIVE_LOW>;
+		post-power-on-delay-ms = <200>;
+	};
+};
+
+&cpu0 {
+	cpu-supply = <&reg_vdd_cpux>;
+};
+
+&ehci0 {
+	status = "okay";
+};
+
+&ehci1 {
+	status = "okay";
+};
+
+&emac {
+	phy-handle = <&int_mii_phy>;
+	phy-mode = "mii";
+	allwinner,leds-active-low;
+	status = "okay";
 };
 
 &mmc0 {
-	pinctrl-0 = <&mmc0_pins_a>;
-	pinctrl-names = "default";
-	broken-cd;
-	bus-width = <4>;
 	vmmc-supply = <&reg_vcc3v3>;
+	bus-width = <4>;
+	cd-gpios = <&pio 5 6 GPIO_ACTIVE_LOW>; /* PF6 */
 	status = "okay";
+};
+
+&mmc1 {
+	vmmc-supply = <&reg_vcc_wifi>;
+	mmc-pwrseq = <&wifi_pwrseq>;
+	bus-width = <4>;
+	non-removable;
+	status = "okay";
+
+	/*
+	 * Explicitly define the sdio device, so that we can add an ethernet
+	 * alias for it (which e.g. makes u-boot set a mac-address).
+	 */
+	xr819: sdio_wifi@1 {
+		reg = <1>;
+	};
+};
+
+&ohci0 {
+	status = "okay";
+};
+
+&ohci1 {
+	status = "okay";
+};
+
+&spi0 {
+    pinctrl-names = "default";
+    pinctrl-0 = <&spi0_pins>;
+    status = "okay";
+
+	flash: spinand@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "spi-nand";
+		reg = <0>;
+		spi-max-frequency = <100000000>;
+
+		boot@0 {
+			label = "boot";
+			reg = <0x0000000 0x0100000>;
+		};
+
+		ubi0@100000 {
+			label = "ubi0";
+			reg = <0x0100000 0x0000000>;
+		};
+
+	};
+};
+
+
+&uart0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_pins_a>;
+	status = "okay";
+};
+
+&uart1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart1_pins>;
+	status = "disabled";
 };
 
 &uart2 {
-	pinctrl-0 = <&uart2_pins_a>;
 	pinctrl-names = "default";
-	status = "okay";
+	pinctrl-0 = <&uart2_pins>;
+	status = "disabled";
 };
 
 &usb_otg {
-	dr_mode = "otg";
+	dr_mode = "peripheral";
 	status = "okay";
 };
 
 &usbphy {
-	usb0_id_det-gpio = <&pio 5 6 GPIO_ACTIVE_HIGH>;
+	/*
+	 * USB Type-A port VBUS is always on. However, MicroUSB VBUS can only
+	 * power up the board; when it's used as OTG port, this VBUS is
+	 * always off even if the board is powered via GPIO pins.
+	 */
 	status = "okay";
-};
-
-&pio {
-	
-	uart2_pins_a: uart2@2 {
-		pins = "PB0", "PB1";
-		function = "uart2";
-		bias-pull-up;
-	};
-
-	spi0_pins: spi0-pins {
-		pins = "PC0", "PC1", "PC2", "PC3";
-		function = "spi0";
-		drive-strength = <10>;
-		bias-disable;
-	};
-	
+	usb0_id_det-gpios = <&pio 6 12 GPIO_ACTIVE_HIGH>; /* PG12 */
 };
